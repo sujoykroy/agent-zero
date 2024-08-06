@@ -1,0 +1,106 @@
+{% import "bootstrap/wtf.html" as wtf %}
+
+{%- extends "base.html" %}
+
+{% block styles %}
+{{super()}}
+<style type="text/css">
+#answer pre {
+    background-color: black;
+    max-height: 70vh;
+    overflow: auto;
+    white-space: pre-wrap;
+}
+</style>
+
+{%- endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="card" >
+            <div class="card-body">
+                <h1>Agent Zero</h1>
+                <p>Ask question to agent zero to get answer of everything...</p>
+            </div>
+        </div>
+        <div class="card" >
+            <div class="card-body" id="answer"></div>
+        </div>
+        <div class="card" >
+            <div class="card-body">
+                <form id="question-form">
+                    <div class="form-group">
+                        <input class="form-control" id="question"
+                                aria-describedby=questionHelp" placeholder="Enter your question">
+                    </div>
+                    <button type="submit" id="question-submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        async function getAnswer(event) {
+            if(event) event.preventDefault();
+            let answerCard = document.querySelector('#answer');
+            let submitButton = document.querySelector('#question-submit');
+            let questionInput = document.querySelector('#question');
+            let intervalId = setInterval(getOutput, 2000);
+            try {
+                submitButton.innerText = "Processing...";
+                let question = questionInput.value;
+                questionInput.value = "";
+                const response = await fetch("/chat", {
+                    method: 'POST',
+                    body: JSON.stringify({question: question}),
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                });
+                if (response.ok) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                    await getOutput();
+                } else {
+                    questionInput.value = question;
+                    answerCard.innerText = "unable to get output";
+                }
+            } catch (error) {
+                console.error(error.message);
+            }
+            if(intervalId) clearInterval(intervalId);
+            submitButton.innerText = 'Submit';
+        }
+
+        async function getOutput() {
+            let answerCard = document.querySelector('#answer');
+            try {
+                const response = await fetch("/output", {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    const json = await response.json();
+                    answerCard.innerHTML = json.output.replace(/\n/g, '<br>');
+                    setTimeout(scrollToBottomOfAnswerCard, 2000);
+               }
+            } catch (error) {
+                console.error(error.message);
+            }
+        }
+
+        function scrollToBottomOfAnswerCard() {
+            let answerCardPre = document.querySelector('#answer pre');
+            if(answerCardPre) {
+                answerCardPre.scrollTop = answerCardPre.scrollHeight;
+            }
+        }
+
+
+        document.addEventListener("DOMContentLoaded", async (event) => {
+            document.querySelector('#question-submit').addEventListener('click', getAnswer);
+            document.querySelector('#question-form').addEventListener('submit', getAnswer);
+            await getOutput();
+        });
+    </script>
+
+{%- endblock %}
+
