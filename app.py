@@ -66,6 +66,13 @@ def get_output():
             output = filep.read()
     return jsonify({'output': output})
 
+@app.route('/reset', methods=['POST'])
+def reset_agent():
+    global agent
+    PrintStyle.log_file_path = None
+    agent = initialize_agent()
+    return jsonify({'success': True})
+
 @app.route('/', methods=['GET'])
 @auth.login_required
 

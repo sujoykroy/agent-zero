@@ -34,6 +34,7 @@
                                 aria-describedby=questionHelp" placeholder="Enter your question">
                     </div>
                     <button type="submit" id="question-submit" class="btn btn-primary">Submit</button>
+                    <button type="button" id="reset-submit" class="btn btn-primary">Reset Agent</button>
                 </form>
             </div>
         </div>
@@ -94,10 +95,27 @@
             }
         }
 
+        async function resetAgent() {
+            let resetButton = document.querySelector('#reset-submit');
+            resetButton.innerText = 'Resetting...';
+            try {
+                const response = await fetch("/reset", {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    await getOutput();
+                }
+            } catch (error) {
+                console.error(error.message);
+            }
+            resetButton.innerText = 'Reset Agent'
+        }
+
 
         document.addEventListener("DOMContentLoaded", async (event) => {
             document.querySelector('#question-submit').addEventListener('click', getAnswer);
             document.querySelector('#question-form').addEventListener('submit', getAnswer);
+            document.querySelector('#reset-submit').addEventListener('click', resetAgent);
             await getOutput();
         });
     </script>
